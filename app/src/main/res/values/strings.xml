@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AYWALK</string>
+    <string name="submit">Submit</string>
+    <string name="destination">Destination</string>
+    <string name="start">Start</string>
+    <string name="header_text">Input to and from, or use current location</string>
 </resources>
