@@ -1,13 +1,11 @@
 package pk.aywalk.search
 
-import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import android.app.Activity
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -23,78 +21,90 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role.Companion.Button
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import pk.aywalk.R
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import java.util.Locale
 
 @Composable
-fun SearchInput()
+fun SearchInput(locClient: FusedLocationProviderClient, onSubmit: () -> Unit)
 {
     Column (modifier = Modifier
+        .padding(16.dp)
         .fillMaxWidth(fraction = 0.9F)) {
-        Input()
+        Input(locClient)
+        StartSearchButton (onClick = onSubmit)
     }
 }
 
 @Composable
-fun Input() {
+fun Input(locClient: FusedLocationProviderClient) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        var from = ""
-        Row() {
-            StationInputField(modifier = Modifier, role = "From", output = { text -> from = text })
-            FloatingActionButton(modifier = Modifier.size(55.dp).padding(start = 12.dp),
-                onClick = {
-                    // TODO ask for location, disable text input, use location
-                },
-                containerColor = Color.White) {
-                Icon(modifier = Modifier.size(30.dp),
-                    imageVector = Icons.Outlined.LocationOn,
-                    tint = Color.Black,
-                    contentDescription = "Use current location")
-            }
+        var from by remember { mutableStateOf("") }
+        Row {
+            TextField(value = from, onValueChange = { from = it }, label = { Text("From") })
+            LocationButton(locClient = locClient, store = {loc -> from = loc})
         }
-        var to = ""
-        StationInputField(role = "To", output = { text -> to = text })
-        StartSearchButton {
+        var to by remember { mutableStateOf("") }
+        TextField(value = to, onValueChange = { to = it }, label = { Text("To") })
 
-        }
+
     }
 }
 
 @Composable
-fun StationInputField(modifier: Modifier = Modifier, role: String, output : (text: String) -> Unit) {
-    var text by remember { mutableStateOf("") }
-
-    TextField(value = text, onValueChange = { text = it; output(text) }, label = { Text(role) })
+fun LocationButton(locClient: FusedLocationProviderClient, modifier: Modifier = Modifier, store : (location: String) -> Unit)
+{
+    var isClicked by remember { mutableStateOf(false) }
+    FloatingActionButton(modifier = modifier.size(55.dp).padding(start = 12.dp),
+        onClick = {
+            isClicked = true
+        },
+        containerColor = Color.White) {
+        Icon(modifier = Modifier.fillMaxSize(0.8f),
+            imageVector = Icons.Outlined.LocationOn,
+            tint = Color.Black,
+            contentDescription = "Use current location")
+    }
+    if (isClicked)
+    {
+        isClicked = false
+        if (ActivityCompat.checkSelfPermission(
+                LocalContext.current as Activity,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                LocalContext.current as Activity,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+            return
+        }
+        locClient.lastLocation.addOnSuccessListener { location ->
+            store(String.format(Locale.getDefault(), "%.6f,%.6f",location.latitude, location.longitude))
+        }
+    }
 }
 
 @Composable
 fun StartSearchButton(onClick: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(),
-           horizontalAlignment = Alignment.CenterHorizontally)
-    {
-        Button(
-            onClick = onClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.DarkGray
-            )
-        ) {
-            Text("Search")
-        }
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.DarkGray
+        )
+    ) {
+        Text("Search")
     }
 }
 
 
-@Composable
-@Preview
-fun PreviewSearchInput()
-{
-    SearchInput()
-}
+//@Composable
+//@Preview
+//fun PreviewSearchInput()
+//{
+//    Input()
+//}
