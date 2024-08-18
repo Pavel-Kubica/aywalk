@@ -14,6 +14,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -26,27 +29,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.navigation.NavController
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import pk.aywalk.Screens
 import java.util.Locale
 
 @Composable
-fun SearchInput(locClient: FusedLocationProviderClient, onSubmit: () -> Unit)
+fun SearchInput(navController: NavController)
 {
     Column (modifier = Modifier
         .padding(16.dp)
         .fillMaxWidth(fraction = 0.9F)) {
-        Input(locClient)
-        StartSearchButton (onClick = onSubmit)
+        Input()
+        StartSearchButton(onClick = { navController.navigate(Screens.ResultsScreen.route) } )
     }
 }
 
 @Composable
-fun Input(locClient: FusedLocationProviderClient) {
+fun Input() {
     Column(modifier = Modifier.fillMaxWidth()) {
         var from by remember { mutableStateOf("") }
         Row {
             TextField(value = from, onValueChange = { from = it }, label = { Text("From") })
-            LocationButton(locClient = locClient, store = {loc -> from = loc})
+            LocationButton(store = {loc -> from = loc})
         }
         var to by remember { mutableStateOf("") }
         TextField(value = to, onValueChange = { to = it }, label = { Text("To") })
@@ -56,36 +62,35 @@ fun Input(locClient: FusedLocationProviderClient) {
 }
 
 @Composable
-fun LocationButton(locClient: FusedLocationProviderClient, modifier: Modifier = Modifier, store : (location: String) -> Unit)
+fun LocationButton(modifier: Modifier = Modifier, store : (location: String) -> Unit)
 {
-    var isClicked by remember { mutableStateOf(false) }
-    FloatingActionButton(modifier = modifier.size(55.dp).padding(start = 12.dp),
+    val activity = LocalContext.current as Activity;
+    val locClient = LocationServices.getFusedLocationProviderClient(activity)
+    IconButton(modifier = modifier
+        .size(55.dp)
+        .padding(start = 12.dp),
         onClick = {
-            isClicked = true
+            if (ActivityCompat.checkSelfPermission(
+                    activity,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+            }
+            locClient.lastLocation.addOnSuccessListener { location ->
+                store(String.format(Locale.getDefault(), "%.6f,%.6f",location.latitude, location.longitude))
+            }
         },
-        containerColor = Color.White) {
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = Color.White
+        )) {
         Icon(modifier = Modifier.fillMaxSize(0.8f),
             imageVector = Icons.Outlined.LocationOn,
             tint = Color.Black,
             contentDescription = "Use current location")
-    }
-    if (isClicked)
-    {
-        isClicked = false
-        if (ActivityCompat.checkSelfPermission(
-                LocalContext.current as Activity,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                LocalContext.current as Activity,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION), 0)
-            return
-        }
-        locClient.lastLocation.addOnSuccessListener { location ->
-            store(String.format(Locale.getDefault(), "%.6f,%.6f",location.latitude, location.longitude))
-        }
     }
 }
 
@@ -100,11 +105,3 @@ fun StartSearchButton(onClick: () -> Unit) {
         Text("Search")
     }
 }
-
-
-//@Composable
-//@Preview
-//fun PreviewSearchInput()
-//{
-//    Input()
-//}
