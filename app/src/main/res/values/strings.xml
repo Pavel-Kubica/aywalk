@@ -4,4 +4,5 @@
     <string name="destination">Destination</string>
     <string name="start">Start</string>
     <string name="header_text">Input to and from, or use current location</string>
+    <string name="results_title">Výsledky</string>
 </resources>

@@ -1,4 +1,4 @@
-package pk.aywalk.search
+package pk.aywalk.ui.screen
 
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -12,10 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -30,7 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import pk.aywalk.Screens
 import java.util.Locale
@@ -41,21 +38,23 @@ fun SearchInput(navController: NavController)
     Column (modifier = Modifier
         .padding(16.dp)
         .fillMaxWidth(fraction = 0.9F)) {
-        Input()
-        StartSearchButton(onClick = { navController.navigate(Screens.ResultsScreen.route) } )
+        var from = ""
+        var to = ""
+        Input(onFromChange = { newFrom -> from = newFrom }, onToChange = {newTo -> to = newTo})
+        StartSearchButton(onClick = { navController.navigate(route = Screens.ResultsScreen.route + "/from=${from}&to=${to}") } )
     }
 }
 
 @Composable
-fun Input() {
+fun Input(onFromChange: (newFrom: String) -> Unit, onToChange: (newTo: String) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         var from by remember { mutableStateOf("") }
         Row {
-            TextField(value = from, onValueChange = { from = it }, label = { Text("From") })
+            TextField(value = from, onValueChange = { from = it; onFromChange(it) }, label = { Text("From") })
             LocationButton(store = {loc -> from = loc})
         }
         var to by remember { mutableStateOf("") }
-        TextField(value = to, onValueChange = { to = it }, label = { Text("To") })
+        TextField(value = to, onValueChange = { to = it; onToChange(it) }, label = { Text("To") })
 
 
     }
@@ -64,7 +63,7 @@ fun Input() {
 @Composable
 fun LocationButton(modifier: Modifier = Modifier, store : (location: String) -> Unit)
 {
-    val activity = LocalContext.current as Activity;
+    val activity = LocalContext.current as Activity
     val locClient = LocationServices.getFusedLocationProviderClient(activity)
     IconButton(modifier = modifier
         .size(55.dp)
