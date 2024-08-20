@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
+import com.commandiron.wheel_picker_compose.WheelDateTimePicker
 import com.google.android.gms.location.LocationServices
 import pk.aywalk.Screens
 import java.util.Locale
@@ -40,13 +41,14 @@ fun SearchInput(navController: NavController)
         .fillMaxWidth(fraction = 0.9F)) {
         var from = ""
         var to = ""
-        Input(onFromChange = { newFrom -> from = newFrom }, onToChange = {newTo -> to = newTo})
-        StartSearchButton(onClick = { navController.navigate(route = Screens.ResultsScreen.route + "/from=${from}&to=${to}") } )
+        var dateTime: java.time.LocalDateTime? = null
+        Input(onFromChange = { newFrom -> from = newFrom }, onToChange = {newTo -> to = newTo}, onTimeChange = {newTime -> dateTime = newTime})
+        StartSearchButton(onClick = { navController.navigate(route = Screens.ResultsScreen.route + "/from=${from}&to=${to}&time=${dateTime}") } )
     }
 }
 
 @Composable
-fun Input(onFromChange: (newFrom: String) -> Unit, onToChange: (newTo: String) -> Unit) {
+fun Input(onFromChange: (newFrom: String) -> Unit, onToChange: (newTo: String) -> Unit, onTimeChange: (newTime: java.time.LocalDateTime) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         var from by remember { mutableStateOf("") }
         Row {
@@ -55,8 +57,7 @@ fun Input(onFromChange: (newFrom: String) -> Unit, onToChange: (newTo: String) -
         }
         var to by remember { mutableStateOf("") }
         TextField(value = to, onValueChange = { to = it; onToChange(it) }, label = { Text("To") })
-
-
+        WheelDateTimePicker(onSnappedDateTime = onTimeChange, yearsRange = IntRange(2024, 2024))
     }
 }
 

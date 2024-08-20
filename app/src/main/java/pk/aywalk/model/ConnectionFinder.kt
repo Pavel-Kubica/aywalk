@@ -1,17 +1,18 @@
 package pk.aywalk.model
 
+import androidx.lifecycle.ViewModel
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 
 
-class ConnectionFinder 
+object ConnectionFinder : ViewModel()
 {
-    companion object {
-        fun findConnections(from: String, to: String): ConnectionFinderResult {
-            TODO("Not yet implemented")
-        }
+    fun findConnections(from: String, to: String, time: java.time.LocalDateTime): ConnectionFinderResult {
+        TODO("Not yet implemented")
     }
 }
+
+
 
 data class ConnectionFinderResult(val comfort: Array<Connection>,
                                   val lazy: Array<Connection>,

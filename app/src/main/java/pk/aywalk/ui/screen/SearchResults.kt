@@ -46,8 +46,8 @@ import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchResults (navController: NavController, from: String, to: String) {
-    val searchResult = ConnectionFinder.findConnections(from, to)
+fun SearchResults (navController: NavController, from: String, to: String, time: java.time.LocalDateTime) {
+    val searchResult = ConnectionFinder.findConnections(from, to, time)
     Scaffold (
         topBar = {
             CenterAlignedTopAppBar(
@@ -56,7 +56,7 @@ fun SearchResults (navController: NavController, from: String, to: String) {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(
                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
+                           contentDescription = null
                         )
                     }
                 })
@@ -73,11 +73,11 @@ fun SearchResults (navController: NavController, from: String, to: String) {
 @Composable
 fun ResultsColumn(modifier: Modifier = Modifier, icon: ImageVector, cons: Array<Connection>)
 {
-    Column (modifier = modifier.verticalScroll(rememberScrollState(0))) {
+    Column (modifier = modifier.verticalScroll(rememberScrollState(0)),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Icon(imageVector = icon, contentDescription = null)
         for (con in cons)
         {
-            Spacer(modifier = Modifier.height(10.dp))
             Connection(con = con)
         }
     }
