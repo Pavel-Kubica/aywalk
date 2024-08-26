@@ -1,6 +1,7 @@
 package pk.aywalk.model
 
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -31,7 +32,7 @@ object ConnectionFinder : ViewModel()
         stopData = stopGroups.toSortedSet { lhs, rhs -> lhs.name.compareTo(rhs.name) }
     }
 
-    private const val NEAREST_WALKABLE = 5
+    private const val MAX_WALKABLE_DIST_METERS = 500
     private const val STOPS_URL = "https://data.pid.cz/stops/json/stops.json"
 
     private lateinit var stopData: SortedSet<GetStopsResponse.Stop>
@@ -44,19 +45,14 @@ object ConnectionFinder : ViewModel()
 
     private fun getNearestTo(latitude: Double, longitude: Double): List<String>
     {
-        fun compareByDistance(lhs: GetStopsResponse.Stop, rhs: GetStopsResponse.Stop): Int
+        fun distanceFilter(stop: GetStopsResponse.Stop): Boolean
         {
             val resultArr = FloatArray(3)
-            Location.distanceBetween(lhs.latitude, lhs.longitude, latitude, longitude, resultArr)
-            val dist1 = resultArr[0]
-            Location.distanceBetween(rhs.latitude, rhs.longitude, latitude, longitude, resultArr)
-            val dist2 = resultArr[0]
-            return dist1.compareTo(dist2)
+            Location.distanceBetween(stop.latitude, stop.longitude, latitude, longitude, resultArr)
+            return resultArr[0] < MAX_WALKABLE_DIST_METERS && resultArr[0] != 0f // Distance of 0 means we found ourselves
         }
 
-        val sorted = stopData.sortedWith(::compareByDistance)
-        return sorted.subList(1, NEAREST_WALKABLE). // Start from 1, because [0] will be the source (distance of 0)
-                map { stopGroup -> stopGroup.name }
+        return stopData.filter(::distanceFilter).map { stop -> stop.name }
     }
 
     @Serializable
